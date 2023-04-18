@@ -43,6 +43,10 @@
 // This macro appears in TideSearchApplication.cpp, peptide.cc, and active_peptide_queue.cc
 #define CPP_SCORING 1
 
+// Macro to perform scoring on a GPU device
+// This macro appears in TideSearchApplication.cpp
+#define GPU_SCORING 1
+
 using namespace std;
 typedef google::protobuf::RepeatedField<int>::const_iterator FieldIter;
 

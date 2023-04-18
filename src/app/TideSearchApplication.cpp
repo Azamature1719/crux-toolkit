@@ -17,6 +17,8 @@
 #include <math.h> //Added by Andy Lin
 #include <map> //Added by Andy Lin
 
+#include <cuda_runtime.h> // Getting access to CUDA API for GPU scoring implementation
+
 #define TAILOR_QUANTILE_TH 0.01
 #define TAILOR_OFFSET 5.0
 
@@ -170,6 +172,39 @@ int TideSearchApplication::main(const vector<string>& input_files, const string 
     compute_sp = true;
     carp(CARP_INFO, "Setting compute-sp=T because SQT output is enabled.");
   }
+
+  #ifdef GPU_SCORING
+
+    #define WARP_SIZE 32
+    #define DEFAULT_DEVICE 0
+    #define SPECTRUM_MATCHINGS_AT_ONCE 100
+
+    uint8_t devices = 0; 
+    cudaError_t err = cudaGetDeviceCount(&devices); 
+
+    if (devices > 0 && err == cudaSuccess) 
+    { 
+      // Value should be transmitted to the function
+      cudaSetDevice(DEFAULT_DEVICE);
+      
+      // Get GPU device properties
+      cudaDeviceProp deviceProp; 
+      cudaGetDeviceProperties(&deviceProp, dev);
+      size_t totalGlobalMem = deviceProp.totalGlobalMem;
+
+      // Allocation all the available memory on GPU
+      int *d_scoring_data;
+      cudaMalloc((void **)&d_scoring_data, totalGlobalMem);
+
+      // Calculating property values
+      length_t block_size = WARP_SIZE;
+      length_t grid_size = (SPECTRUM_MATCHINGS_AT_ONCE + 1) / block_size + 1;
+    } 
+    else
+    { 
+        carp(CARP_FATAL, "There are no GPU devices");
+    } 
+  #endif
 
   vector<int> negative_isotope_errors = getNegativeIsotopeErrors();
 
@@ -1349,6 +1384,8 @@ void TideSearchApplication::collectScoresCompiled(
   int charge
 ) {
 #ifdef CPP_SCORING
+
+
   //Scoring in C++		
   deque<Peptide*>::const_iterator iter_ = active_peptide_queue->iter_;
   TideMatchSet::Arr2::iterator it = match_arr->begin();
