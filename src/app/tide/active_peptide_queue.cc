@@ -11,6 +11,9 @@
 #include "compiler.h"
 #include "app/TideMatchSet.h"
 #include <map> //Added by Andy Lin
+
+#include "../cuda_libs.h" // Cuda libs 
+
 #define CHECK(x) GOOGLE_CHECK((x))
 
 DEFINE_int32(fifo_page_size, 1, "Page size for FIFO allocator, in megs");
@@ -185,6 +188,16 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
       ++end_;
     }
   }
+
+  #ifdef GPU_SCORING
+    vector<unsigned int> peptides;
+  
+    for(auto pep_iter = iter_; pep_iter != end_; pep_iter++)
+      copy((*pep_iter)->peaks_0.begin(), (*pep_iter)->peaks_0.end(), back_inserter(peptides));
+
+    cudaMemcpy(d_peptides, peptides.data(), peptides.size() * sizeof(unsigned int), cudaMemcpyHostToDevice);
+  #endif
+
   return active;
 
 }

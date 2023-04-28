@@ -17,7 +17,7 @@
 #include <math.h> //Added by Andy Lin
 #include <map> //Added by Andy Lin
 
-#include <cuda_runtime.h> // Getting access to CUDA API for GPU scoring implementation
+#include "cuda_libs.h"
 
 #define TAILOR_QUANTILE_TH 0.01
 #define TAILOR_OFFSET 5.0
@@ -173,13 +173,14 @@ int TideSearchApplication::main(const vector<string>& input_files, const string 
     carp(CARP_INFO, "Setting compute-sp=T because SQT output is enabled.");
   }
 
+  
   #ifdef GPU_SCORING
 
     #define WARP_SIZE 32
     #define DEFAULT_DEVICE 0
     #define SPECTRUM_MATCHINGS_AT_ONCE 100
 
-    uint8_t devices = 0; 
+    int devices = 0; 
     cudaError_t err = cudaGetDeviceCount(&devices); 
 
     if (devices > 0 && err == cudaSuccess) 
@@ -187,22 +188,22 @@ int TideSearchApplication::main(const vector<string>& input_files, const string 
       // Value should be transmitted to the function
       cudaSetDevice(DEFAULT_DEVICE);
       
-      // Get GPU device properties
+      // Get GPU device properties - could be used for memory configuration
       cudaDeviceProp deviceProp; 
-      cudaGetDeviceProperties(&deviceProp, dev);
-      size_t totalGlobalMem = deviceProp.totalGlobalMem;
-
-      // Allocation all the available memory on GPU
-      int *d_scoring_data;
-      cudaMalloc((void **)&d_scoring_data, totalGlobalMem);
+      cudaGetDeviceProperties(&deviceProp, DEFAULT_DEVICE);
+      
+      // Get all free memory on GPU device
+      size_t free, total;
+      cudaMemGetInfo(&free, &total);
+      cudaMalloc((void **)&d_peptides, free);
 
       // Calculating property values
-      length_t block_size = WARP_SIZE;
-      length_t grid_size = (SPECTRUM_MATCHINGS_AT_ONCE + 1) / block_size + 1;
+      size_t block_size = WARP_SIZE;
+      size_t grid_size = (SPECTRUM_MATCHINGS_AT_ONCE + 1) / block_size + 1;
     } 
     else
     { 
-        carp(CARP_FATAL, "There are no GPU devices");
+      carp(CARP_FATAL, "There are no GPU devices");
     } 
   #endif
 
