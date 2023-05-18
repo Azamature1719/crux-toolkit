@@ -1,5 +1,7 @@
 #include "gpu_scoring.cuh"
 
+unsigned int *d_peptides;
+
 void setDeviceProperties(int deviceNum, size_t warpSize, size_t spectrumMatchingOnce){
   int devices = 0; 
   cudaError_t err = cudaGetDeviceCount(&devices); 

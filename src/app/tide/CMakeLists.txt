@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 cmake_policy(VERSION 3.15)
 
+find_package(CUDAToolkit)
 enable_language(CUDA)
 
 ###### Set up include and link directories  ######
@@ -90,6 +91,8 @@ if (WIN32 AND NOT CYGWIN)
     sp_scorer.cc
     spectrum_collection.cc
     spectrum_preprocess2.cc
+    gpu_scoring.cu
+    gpu_scoring.cuh
   )
 else (WIN32 AND NOT CYGWIN)
   set(
@@ -109,19 +112,21 @@ else (WIN32 AND NOT CYGWIN)
     sp_scorer.cc
     spectrum_collection.cc
     spectrum_preprocess2.cc
+    gpu_scoring.cu
+    gpu_scoring.cuh
   )
 endif (WIN32 AND NOT CYGWIN)
 add_library(tide-support STATIC ${tide_lib_files})
 
-add_library(
-  gpu_scoring STATIC
-  gpu_scoring.cuh
-  gpu_scoring.cu
-)
+#add_library(
+#  gpu_scoring STATIC
+#  gpu_scoring.cuh
+#  gpu_scoring.cu
+#)
 
-set_target_properties(gpu_scoring PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(gpu_scoring cudart)
-target_link_libraries(tide-support PRIVATE gpu_scoring)
+#set_target_properties(gpu_scoring PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(tide-support PUBLIC CUDA::cudart)
+#target_link_libraries(tide-support PRIVATE gpu_scoring)
 
 
 if (WIN32 AND NOT CYGWIN)

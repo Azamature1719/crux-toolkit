@@ -9,8 +9,6 @@
 
 //#include "io/carp.h"
 
-extern unsigned int *d_peptides;
-
 void setDeviceProperties(int deviceNum, size_t warpSize, size_t spectrumMatchingOnce);
 void transferDataToDevice(std::vector<unsigned int> peptides);
 __global__ void score();
