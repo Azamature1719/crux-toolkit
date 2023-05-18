@@ -30,3 +30,8 @@ void setDeviceProperties(int deviceNum, size_t warpSize, size_t spectrumMatching
 void transferDataToDevice(std::vector<unsigned int> peptides){
     cudaMemcpy(d_peptides, peptides.data(), peptides.size() * sizeof(unsigned int), cudaMemcpyHostToDevice);
 }
+
+// scoring function
+__global__ void score(){
+  
+}

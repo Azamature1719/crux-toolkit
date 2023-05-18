@@ -1,3 +1,6 @@
+#ifndef GPU_SCORING_CUH
+#define GPU_SCORING_CUH
+
 // Getting access to CUDA API for GPU scoring implementation
 #include <vector>
 #include <cuda.h>
@@ -10,3 +13,6 @@ extern unsigned int *d_peptides;
 
 void setDeviceProperties(int deviceNum, size_t warpSize, size_t spectrumMatchingOnce);
 void transferDataToDevice(std::vector<unsigned int> peptides);
+__global__ void score();
+
+#endif GPU_SCORING_CUH

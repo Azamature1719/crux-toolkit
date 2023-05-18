@@ -171,17 +171,6 @@ int TideSearchApplication::main(const vector<string>& input_files, const string 
     carp(CARP_INFO, "Setting compute-sp=T because SQT output is enabled.");
   }
 
-  #ifdef GPU_SCORING
-
-    // Synthetic variables
-    #define WARP_SIZE 32
-    #define DEFAULT_DEVICE 0
-    #define SPECTRUM_MATCHINGS_AT_ONCE 100
-
-    setDeviceProperties(DEFAULT_DEVICE, WARP_SIZE, SPECTRUM_MATCHINGS_AT_ONCE);
-
-  #endif
-
   vector<int> negative_isotope_errors = getNegativeIsotopeErrors();
 
   ProteinVec proteins;

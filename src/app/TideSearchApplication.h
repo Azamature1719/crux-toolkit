@@ -14,8 +14,6 @@
 #include "tide/max_mz.h"
 #include "util/MathUtil.h"
 
-#include "gpu_scoring.cuh"
-
 using namespace std;
 
 /**

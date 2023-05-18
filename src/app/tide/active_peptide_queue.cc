@@ -12,6 +12,8 @@
 #include "app/TideMatchSet.h"
 #include <map> //Added by Andy Lin
 
+#include "gpu_scoring.cuh"
+
 #define CHECK(x) GOOGLE_CHECK((x))
 
 DEFINE_int32(fifo_page_size, 1, "Page size for FIFO allocator, in megs");

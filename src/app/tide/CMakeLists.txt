@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 cmake_policy(VERSION 3.15)
 
+enable_language(CUDA)
+
 ###### Set up include and link directories  ######
 if (WIN32 AND NOT CYGWIN)
   include_directories(
@@ -110,6 +112,17 @@ else (WIN32 AND NOT CYGWIN)
   )
 endif (WIN32 AND NOT CYGWIN)
 add_library(tide-support STATIC ${tide_lib_files})
+
+add_library(
+  gpu_scoring STATIC
+  gpu_scoring.cuh
+  gpu_scoring.cu
+)
+
+set_target_properties(gpu_scoring PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(gpu_scoring cudart)
+target_link_libraries(tide-support PRIVATE gpu_scoring)
+
 
 if (WIN32 AND NOT CYGWIN)
   set_property(

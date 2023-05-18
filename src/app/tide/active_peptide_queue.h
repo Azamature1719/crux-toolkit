@@ -22,8 +22,6 @@
 #include "spectrum_collection.h"
 #include "io/OutputFiles.h"
 
-#include "../gpu_scoring.cuh"
-
 #ifndef ACTIVE_PEPTIDE_QUEUE_H
 #define ACTIVE_PEPTIDE_QUEUE_H
 
