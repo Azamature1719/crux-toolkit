@@ -195,13 +195,15 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
     #define DEFAULT_DEVICE 0
     #define SPECTRUM_MATCHINGS_AT_ONCE 100
 
-    setDeviceProperties(DEFAULT_DEVICE, WARP_SIZE, SPECTRUM_MATCHINGS_AT_ONCE);
-
     vector<unsigned int> peptides;  
     for(auto pep_iter = iter_; pep_iter != end_; pep_iter++)
       copy((*pep_iter)->peaks_0.begin(), (*pep_iter)->peaks_0.end(), back_inserter(peptides));
 
-    transferDataToDevice(peptides);
+    std::cout << "Peptides: ";
+    for(int i = 0; i < peptides.size(); ++i) 
+      std::cout << peptides[i] << " ";
+
+    std::cout << "SetDevice: " << setDeviceProperties(DEFAULT_DEVICE, WARP_SIZE, SPECTRUM_MATCHINGS_AT_ONCE, peptides) << "\n";
 
   #endif
 
