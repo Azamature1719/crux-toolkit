@@ -191,24 +191,29 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
 
   #ifdef GPU_SCORING
 
-    #define WARP_SIZE 32
     #define DEFAULT_DEVICE 0
-    #define SPECTRUM_MATCHINGS_AT_ONCE 100
 
     vector<unsigned int> peptides;  
     for(auto pep_iter = iter_; pep_iter != end_; pep_iter++)
       copy((*pep_iter)->peaks_0.begin(), (*pep_iter)->peaks_0.end(), back_inserter(peptides));
-
-    std::cout << "Peptides: ";
-    for(int i = 0; i < peptides.size(); ++i) 
-      std::cout << peptides[i] << " ";
-
-    std::cout << "SetDevice: " << setDeviceProperties(DEFAULT_DEVICE, WARP_SIZE, SPECTRUM_MATCHINGS_AT_ONCE, peptides) << "\n";
+      
+    transferPeaks(DEFAULT_DEVICE, peptides);
 
   #endif
 
   return active;
 
+}
+
+int GpuBasedScore(const int *cache, unsigned int size_cache){
+
+    #define WARP_SIZE 32
+    int score_result = 0;
+    
+    transferCache(WARP_SIZE, cache, size_cache);
+    score_result = applyScoring();
+
+    return score_result;
 }
 
 // Compute the b ion only theoretical peaks of the peptide in the "back" of the queue

@@ -8,10 +8,9 @@
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
-//#include "io/carp.h"
-
-std::string setDeviceProperties(int deviceNum, size_t warpSize, size_t spectrumMatchingOnce, std::vector<unsigned int> peptides);
-// cudaError_t transferDataToDevice(std::vector<unsigned int> peptides);
-__global__ void score(unsigned int *d_peptides, unsigned int *d_res, size_t peptides_size);
+void transferPeaks(int deviceNum, std::vector<unsigned int> peaks);
+void transferCache(size_t warpSize, const int *cache, unsigned int size_cache);
+int applyScoring();
+__global__ void score(unsigned int *d_peaks, int *d_cache, int *d_res, size_t peaks_size);
 
 #endif GPU_SCORING_CUH
