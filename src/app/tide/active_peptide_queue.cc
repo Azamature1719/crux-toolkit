@@ -192,12 +192,21 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
   #ifdef GPU_SCORING
 
     #define DEFAULT_DEVICE 0
-
+    
     vector<unsigned int> peptides;  
-    for(auto pep_iter = iter_; pep_iter != end_; pep_iter++)
+    size_t pep_num = 0;
+    for(auto pep_iter = iter_; pep_iter != end_; pep_iter++){
       copy((*pep_iter)->peaks_0.begin(), (*pep_iter)->peaks_0.end(), back_inserter(peptides));
-      
-    transferPeaks(DEFAULT_DEVICE, peptides);
+      pep_num++;
+    }
+    
+    // iterations through inner loop should be applied (for dividing peptides) 
+    // for(auto pep_iter = iter_; pep_iter != end_; pep_iter++){
+    //   copy((*pep_iter)->peaks_0.begin(), (*pep_iter)->peaks_0.end(), back_inserter(peptides));
+    //   pep_num++;
+    // }
+
+    transferPeaks(DEFAULT_DEVICE, peptides, pep_num);
 
   #endif
 
@@ -205,16 +214,19 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
 
 }
 
-int GpuBasedScore(const int *cache, unsigned int size_cache){
 
-    #define WARP_SIZE 32
-    int score_result = 0;
+#ifdef GPU_SCORING
+
+  std::vector<int> ActivePeptideQueue::GpuBasedScoring(const int *cache, unsigned int size_cache){
+
+      #define DEFAULT_WARP_SIZE 32
     
-    transferCache(WARP_SIZE, cache, size_cache);
-    score_result = applyScoring();
+      std::vector<int> score_result = applyScoring(DEFAULT_WARP_SIZE, cache, size_cache);
 
-    return score_result;
-}
+      return score_result;
+  }
+
+#endif
 
 // Compute the b ion only theoretical peaks of the peptide in the "back" of the queue
 // (i.e. the one most recently read from disk -- the heaviest).

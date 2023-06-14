@@ -8,9 +8,10 @@
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
-void transferPeaks(int deviceNum, std::vector<unsigned int> peaks);
-void transferCache(size_t warpSize, const int *cache, unsigned int size_cache);
-int applyScoring();
-__global__ void score(unsigned int *d_peaks, int *d_cache, int *d_res, size_t peaks_size);
+ 
+__global__ void score(unsigned int *d_peaks, int *d_cache, int *d_result, size_t peaks_size); 
+void transferPeaks(unsigned int deviceNum, std::vector<unsigned int> peaks, size_t _pep_num); 
+std::vector<int> applyScoring(size_t warpSize, const int *cache, unsigned int cache_size); 
+// void transferCache(); 
 
 #endif GPU_SCORING_CUH
