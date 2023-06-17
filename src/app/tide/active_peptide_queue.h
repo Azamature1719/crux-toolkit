@@ -44,7 +44,7 @@ class ActivePeptideQueue {
   
   #ifdef GPU_SCORING
 
-    std::vector<int> GpuBasedScoring(const int *cache, unsigned int size_cache);
+    std::vector<int> GpuBasedScoring(const int *cache, unsigned int cache_size);
 
   #endif
 

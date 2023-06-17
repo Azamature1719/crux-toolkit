@@ -190,23 +190,28 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
   }
 
   #ifdef GPU_SCORING
-
-    #define DEFAULT_DEVICE 0
     
-    vector<unsigned int> peptides;  
-    size_t pep_num = 0;
+    #define ALIGNMENT_ELEM -1 
+
+    std::vector<std::vector<int>> peptides;  
+    size_t max_size = 0;
+
     for(auto pep_iter = iter_; pep_iter != end_; pep_iter++){
-      copy((*pep_iter)->peaks_0.begin(), (*pep_iter)->peaks_0.end(), back_inserter(peptides));
-      pep_num++;
+      std::vector<int> cur_pep;
+      for(auto peak = (*pep_iter)->peaks_0.begin(); peak != (*pep_iter)->peaks_0.end(); peak++)
+        cur_pep.push_back(*peak);
+      cur_pep.push_back(ALIGNMENT_ELEM);
+      max_size = (cur_pep.size() > max_size) ? cur_pep.size() : max_size;
+      peptides.push_back(cur_pep);
+    }
+
+    // Align the peptides
+    for(int i = 0; i < peptides.size(); ++i){
+      for(size_t j = peptides[i].size(); j < max_size; ++j)
+        peptides[i].push_back(ALIGNMENT_ELEM);
     }
     
-    // iterations through inner loop should be applied (for dividing peptides) 
-    // for(auto pep_iter = iter_; pep_iter != end_; pep_iter++){
-    //   copy((*pep_iter)->peaks_0.begin(), (*pep_iter)->peaks_0.end(), back_inserter(peptides));
-    //   pep_num++;
-    // }
-
-    transferPeaks(DEFAULT_DEVICE, peptides, pep_num);
+    transferPeptides(peptides);
 
   #endif
 
@@ -217,12 +222,8 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
 
 #ifdef GPU_SCORING
 
-  std::vector<int> ActivePeptideQueue::GpuBasedScoring(const int *cache, unsigned int size_cache){
-
-      #define DEFAULT_WARP_SIZE 32
-    
-      std::vector<int> score_result = applyScoring(DEFAULT_WARP_SIZE, cache, size_cache);
-
+  std::vector<int> ActivePeptideQueue::GpuBasedScoring(const int *cache, unsigned int cache_size){
+      std::vector<int> score_result = applyScoring(cache, cache_size);
       return score_result;
   }
 
