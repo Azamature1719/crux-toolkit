@@ -716,8 +716,9 @@ void TideSearchApplication::search(void *threadarg)
                                   &num_precursors_skipped,
                                   &num_isotopes_skipped, &num_retained);
 
-      int nCandPeptide = active_peptide_queue->SetActiveRange(
-          min_mass, max_mass, min_range, max_range, candidatePeptideStatus);
+      std::vector<std::vector<int>> peptides;
+      int nCandPeptide = active_peptide_queue->SetActiveRangeWithPeptides(
+        peptides, min_mass, max_mass, min_range, max_range, candidatePeptideStatus);
 
       if (nCandPeptide == 0)
       {
@@ -731,15 +732,40 @@ void TideSearchApplication::search(void *threadarg)
 
         const int *cache = observed.GetCache();
         unsigned int cache_size = MaxBin::Global().CacheBinEnd() * NUM_PEAK_TYPES; 
-        std::vector<int> score_result = active_peptide_queue->GpuBasedScoring(cache, cache_size);
+        std::vector<int> score_result = active_peptide_queue->GpuBasedScoring(peptides, cache, cache_size);
         
-        for(int i = 0; i < 50; ++i){
+        for(int i = 0; i < 32; ++i){
           std::cout << "RESULT: " << score_result[i] << "\n";
         }
 
         exit(0);
 
       #endif GPU_SCORING
+
+      // int nCandPeptide = active_peptide_queue->SetActiveRange(
+      //     min_mass, max_mass, min_range, max_range, candidatePeptideStatus);
+
+      // if (nCandPeptide == 0)
+      // {
+      //   continue;
+      // }
+      // locks_array[LOCK_CANDIDATES]->lock();
+      // *total_candidate_peptides += nCandPeptide;
+      // locks_array[LOCK_CANDIDATES]->unlock();
+
+      // #ifdef GPU_SCORING
+
+      //   const int *cache = observed.GetCache();
+      //   unsigned int cache_size = MaxBin::Global().CacheBinEnd() * NUM_PEAK_TYPES; 
+      //   std::vector<int> score_result = active_peptide_queue->GpuBasedScoring(cache, cache_size);
+        
+      //   for(int i = 0; i < 50; ++i){
+      //     std::cout << "RESULT: " << score_result[i] << "\n";
+      //   }
+
+      //   exit(0);
+
+      // #endif GPU_SCORING
       
       int candidatePeptideStatusSize = candidatePeptideStatus->size();
       TideMatchSet::Arr2 match_arr2(candidatePeptideStatusSize); // Scored peptides will go here.

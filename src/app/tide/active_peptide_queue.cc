@@ -189,11 +189,162 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
     }
   }
 
+  // #ifdef GPU_SCORING
+    
+  //   #define ALIGNMENT_ELEM -1 
+
+  //   std::vector<std::vector<int>> _peptides;  
+  //   size_t max_size = 0;
+
+  //   for(auto pep_iter = iter_; pep_iter != end_; pep_iter++){
+  //     std::vector<int> cur_pep;
+  //     for(auto peak = (*pep_iter)->peaks_0.begin(); peak != (*pep_iter)->peaks_0.end(); peak++)
+  //       cur_pep.push_back(*peak);
+  //     cur_pep.push_back(ALIGNMENT_ELEM);
+  //     max_size = (cur_pep.size() > max_size) ? cur_pep.size() : max_size;
+  //     _peptides.push_back(cur_pep);
+  //   }
+
+  //   // Align the peptides
+  //   for(int i = 0; i < _peptides.size(); ++i){
+  //     for(size_t j = _peptides[i].size(); j < max_size; ++j)
+  //       _peptides[i].push_back(ALIGNMENT_ELEM);
+  //   }
+    
+  //   peptides = _peptides;
+
+  //   // transferPeptides(peptides);
+
+  // #endif
+
+  return active;
+
+}
+
+int ActivePeptideQueue::SetActiveRangeWithPeptides(std::vector<std::vector<int>> &peptides, vector<double>* min_mass, vector<double>* max_mass, double min_range, double max_range, vector<bool>* candidatePeptideStatus, bool dia_mode) {
+  int min_candidates = 0;  //Added for tailor score calibration method by AKF
+  if (Params::GetBool("use-tailor-calibration")) {
+    min_candidates = 30;
+  }
+  //min_range and max_range have been introduced to fix a bug
+  //introduced by m/z selection. see #222 in sourceforge
+  //this has to be true:
+  // min_range <= min_mass <= max_mass <= max_range
+
+  // queue front() is lightest; back() is heaviest
+
+  // delete anything already loaded that falls below min_range
+  while (!queue_.empty() && queue_.front()->Mass() < min_range) {
+    Peptide* peptide = queue_.front();
+    //print hits in peptide-centric search
+    ReportPeptideHits(peptide);
+    peptide->spectrum_matches_array.clear();
+    vector<Peptide::spectrum_matches>().swap(peptide->spectrum_matches_array);
+    // would delete peptide's underlying pb::Peptide;
+    queue_.pop_front();
+    delete peptide;
+  }
+  if (queue_.empty()) {
+#ifndef CPP_SCORING
+    fifo_alloc_prog1_.ReleaseAll();
+    fifo_alloc_prog2_.ReleaseAll();
+#endif
+  } else {
+    // Free all peptides up to, but not including peptide.
+    // fifo_alloc_peptides_.Release(peptide);
+#ifndef CPP_SCORING	
+    Peptide* peptide = queue_.front();
+    peptide->ReleaseFifo(&fifo_alloc_prog1_, &fifo_alloc_prog2_);
+#endif
+  }
+
+  // Enqueue all peptides that are not yet queued but are lighter than
+  // max_range. For each new enqueued peptide compute the corresponding
+  // theoretical peaks. Data associated with each peptide is allocated by
+  // fifo_alloc_peptides_.
+  bool done = false;
+  //Modified for tailor score calibration method by AKF
+  if (queue_.empty() || queue_.back()->Mass() <= max_range || queue_.size() < min_candidates) {
+    if (!queue_.empty()) {
+      ComputeTheoreticalPeaksBack(dia_mode);
+    }
+    while (!(done = reader_->Done())) {
+      // read all peptides lighter than max_range
+      reader_->Read(&current_pb_peptide_);
+      if (current_pb_peptide_.mass() < min_range) {
+        // we would delete current_pb_peptide_;
+        continue; // skip peptides that fall below min_range
+      }
+/*      Peptide* peptide = new(&fifo_alloc_peptides_)
+        Peptide(current_pb_peptide_, proteins_, &fifo_alloc_peptides_);
+  */    Peptide* peptide = new Peptide(current_pb_peptide_, proteins_, locations_, NULL);        
+      assert(peptide != NULL);
+      queue_.push_back(peptide);
+      //Modified for tailor score calibration method by AKF
+      if (peptide->Mass() > max_range && queue_.size() > min_candidates) {
+        break;
+      }
+      ComputeTheoreticalPeaksBack(dia_mode);
+    }
+  }
+  // by now, if not EOF, then the last (and only the last) enqueued
+  // peptide is too heavy
+  assert(!queue_.empty() || done);
+
+  // Set up iterator for use with HasNext(),
+  // GetPeptide(), and NextPeptide(). Return the number of enqueued peptides.
+  if (queue_.empty()) {
+    return 0;
+  }
+
+  iter_ = queue_.begin();
+  while (iter_ != queue_.end() && (*iter_)->Mass() < min_mass->front()) {
+    ++iter_;
+    if (Params::GetBool("use-tailor-calibration")) { //Added by AKF
+      candidatePeptideStatus->push_back(false);  
+    }
+  }
+  end_ = iter_;
+  if (Params::GetBool("use-tailor-calibration")) { //Added by AKF
+    iter_ = queue_.begin();
+  }
+  int* isotope_idx = new int(0);
+  int active = 0;
+  active_targets_ = active_decoys_ = 0;
+  while (end_ != queue_.end() && (*end_)->Mass() < max_mass->back() ) {
+    if (isWithinIsotope(min_mass, max_mass, (*end_)->Mass(), isotope_idx)) {
+      ++active;
+      candidatePeptideStatus->push_back(true);
+      if (!(*end_)->IsDecoy()) {
+        ++active_targets_;
+      } else {
+        ++active_decoys_;
+      }
+    } else {
+      candidatePeptideStatus->push_back(false);
+    }
+    ++end_;
+  }
+  delete isotope_idx;
+  if (active == 0) {
+    return 0;
+  }
+  //Added for tailor score calibration method by AKF
+  if (Params::GetBool("use-tailor-calibration")) {
+    while (end_ != queue_.end()) {  //Added by AKF
+      if ((*end_)->Prog(1) == NULL || candidatePeptideStatus->size() >= min_candidates-1) {
+        break;
+      }
+      candidatePeptideStatus->push_back(false);
+      ++end_;
+    }
+  }
+
   #ifdef GPU_SCORING
     
     #define ALIGNMENT_ELEM -1 
 
-    std::vector<std::vector<int>> peptides;  
+    std::vector<std::vector<int>> _peptides;  
     size_t max_size = 0;
 
     for(auto pep_iter = iter_; pep_iter != end_; pep_iter++){
@@ -202,16 +353,18 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
         cur_pep.push_back(*peak);
       cur_pep.push_back(ALIGNMENT_ELEM);
       max_size = (cur_pep.size() > max_size) ? cur_pep.size() : max_size;
-      peptides.push_back(cur_pep);
+      _peptides.push_back(cur_pep);
     }
 
     // Align the peptides
-    for(int i = 0; i < peptides.size(); ++i){
-      for(size_t j = peptides[i].size(); j < max_size; ++j)
-        peptides[i].push_back(ALIGNMENT_ELEM);
+    for(int i = 0; i < _peptides.size(); ++i){
+      for(size_t j = _peptides[i].size(); j < max_size; ++j)
+        _peptides[i].push_back(ALIGNMENT_ELEM);
     }
     
-    transferPeptides(peptides);
+    peptides = _peptides;
+
+    // transferPeptides(peptides);
 
   #endif
 
@@ -222,8 +375,8 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
 
 #ifdef GPU_SCORING
 
-  std::vector<int> ActivePeptideQueue::GpuBasedScoring(const int *cache, unsigned int cache_size){
-      std::vector<int> score_result = applyScoring(cache, cache_size);
+  std::vector<int> ActivePeptideQueue::GpuBasedScoring(std::vector<std::vector<int>> peptides, const int *cache, unsigned int cache_size){
+      std::vector<int> score_result = applyScoring(peptides, cache, cache_size);
       return score_result;
   }
 

@@ -40,11 +40,12 @@ class ActivePeptideQueue {
   // See above for usage and .cc for implementation details.
   int SetActiveRange(vector<double>* min_mass, vector<double>* max_mass, double min_range, double max_range, vector<bool>* candidatePeptideStatus, bool dia_mode = false);
   int SetActiveRangeBIons(vector<double>* min_mass, vector<double>* max_mass, double min_range, double max_range, vector<bool>* candidatePeptideStatus);
+  int SetActiveRangeWithPeptides(std::vector<std::vector<int>> &peptides, vector<double>* min_mass, vector<double>* max_mass, double min_range, double max_range, vector<bool>* candidatePeptideStatus, bool dia_mode = false);
 
   
   #ifdef GPU_SCORING
 
-    std::vector<int> GpuBasedScoring(const int *cache, unsigned int cache_size);
+    std::vector<int> GpuBasedScoring(std::vector<std::vector<int>> peptides, const int *cache, unsigned int cache_size);
 
   #endif
 

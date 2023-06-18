@@ -10,6 +10,6 @@
 
 __global__ void score(int *d_peptides, int *d_cache, int *d_result, size_t pep_length); 
 void transferPeptides(std::vector<std::vector<int>> peptides); 
-std::vector<int> applyScoring(const int *cache, unsigned int cache_size);
+std::vector<int> applyScoring(std::vector<std::vector<int>> peptides, const int *cache, unsigned int cache_size);
 
 #endif GPU_SCORING_CUH
