@@ -738,8 +738,6 @@ void TideSearchApplication::search(void *threadarg)
           std::cout << "RESULT: " << score_result[i] << "\n";
         }
 
-        exit(0);
-
       #endif GPU_SCORING
 
       // int nCandPeptide = active_peptide_queue->SetActiveRange(
