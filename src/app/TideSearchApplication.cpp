@@ -716,9 +716,8 @@ void TideSearchApplication::search(void *threadarg)
                                   &num_precursors_skipped,
                                   &num_isotopes_skipped, &num_retained);
 
-      std::vector<std::vector<int>> peptides;
-      int nCandPeptide = active_peptide_queue->SetActiveRangeWithPeptides(
-        peptides, min_mass, max_mass, min_range, max_range, candidatePeptideStatus);
+      //std::vector<std::vector<int>> peptides;
+      int nCandPeptide = active_peptide_queue->SetActiveRange(min_mass, max_mass, min_range, max_range, candidatePeptideStatus);
 
       if (nCandPeptide == 0)
       {
@@ -732,10 +731,11 @@ void TideSearchApplication::search(void *threadarg)
 
         const int *cache = observed.GetCache();
         unsigned int cache_size = MaxBin::Global().CacheBinEnd() * NUM_PEAK_TYPES; 
-        std::vector<int> score_result = active_peptide_queue->GpuBasedScoring(peptides, cache, cache_size);
+        std::vector<int> score_result = active_peptide_queue->GpuBasedScoring(cache, cache_size);
         
-        for(int i = 0; i < 32; ++i){
-          std::cout << "RESULT: " << score_result[i] << "\n";
+	std::cout << "\n" << "Inside TideSearchApp module: " << "\n";
+        for(int i = 0; i < score_result.size(); ++i){
+          std::cout << " Res " << i << ":" << score_result[i];
         }
 
       #endif GPU_SCORING
