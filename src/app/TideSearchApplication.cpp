@@ -733,37 +733,13 @@ void TideSearchApplication::search(void *threadarg)
         unsigned int cache_size = MaxBin::Global().CacheBinEnd() * NUM_PEAK_TYPES; 
         std::vector<int> score_result = active_peptide_queue->GpuBasedScoring(cache, cache_size);
         
-	std::cout << "\n" << "Inside TideSearchApp module: " << "\n";
+	std::cout << "\n\nResults inside \"TideSearchApplication.cpp\"\n\n" << std::endl;
+	// Print GPU results
         for(int i = 0; i < score_result.size(); ++i){
-          std::cout << " Res " << i << ":" << score_result[i];
+          std::cout << " GPU score " << i << ":" << score_result[i];
         }
 
       #endif GPU_SCORING
-
-      // int nCandPeptide = active_peptide_queue->SetActiveRange(
-      //     min_mass, max_mass, min_range, max_range, candidatePeptideStatus);
-
-      // if (nCandPeptide == 0)
-      // {
-      //   continue;
-      // }
-      // locks_array[LOCK_CANDIDATES]->lock();
-      // *total_candidate_peptides += nCandPeptide;
-      // locks_array[LOCK_CANDIDATES]->unlock();
-
-      // #ifdef GPU_SCORING
-
-      //   const int *cache = observed.GetCache();
-      //   unsigned int cache_size = MaxBin::Global().CacheBinEnd() * NUM_PEAK_TYPES; 
-      //   std::vector<int> score_result = active_peptide_queue->GpuBasedScoring(cache, cache_size);
-        
-      //   for(int i = 0; i < 50; ++i){
-      //     std::cout << "RESULT: " << score_result[i] << "\n";
-      //   }
-
-      //   exit(0);
-
-      // #endif GPU_SCORING
       
       int candidatePeptideStatusSize = candidatePeptideStatus->size();
       TideMatchSet::Arr2 match_arr2(candidatePeptideStatusSize); // Scored peptides will go here.

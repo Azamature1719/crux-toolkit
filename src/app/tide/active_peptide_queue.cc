@@ -206,7 +206,7 @@ int ActivePeptideQueue::SetActiveRange(vector<double>* min_mass, vector<double>*
        _peptides.push_back(cur_pep);
      }
 
-     // Align the peptides
+     // Align the peptides - all are of the same length
      for(int i = 0; i < _peptides.size(); ++i){
        for(size_t j = _peptides[i].size(); j < max_size; ++j)
         _peptides[i].push_back(ALIGNMENT_ELEM);
