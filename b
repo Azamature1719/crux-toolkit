@@ -4,6 +4,6 @@ rm -rf build
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make
-make install
+sudo make
+sudo make install
 
